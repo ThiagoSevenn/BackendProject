@@ -1,83 +1,46 @@
-const UserSevice = require('../services/UserService')
+const UserService = require('../services/UserService');
+const createError = require('../utils/errors');
 
-class UserController{
-    constructor(){
-        this.userService = new UserSevice();
-    }
-
-    // CREATE
-    async create(req,res){
-        try {
-            const user = await this.userService.create(req.body);
-            return res.status(201).json({
-                message: 'User created successfully!',
-                user: user
-            });
-        } catch (error) {
-            return res.status(400).json({
-                message: error.message
-            });
-        }
-    }
-    // READ
-    async findById(req,res){
-        try {
-            const id = req.params.id;
-            const user = await this.userService.findById(id);
-            if(!user){
-                throw new Error("User not founded");
-            }
-            return res.status(200).json({
-                user: user
-            })
-        } catch (error) {
-            return res.status(404).json({
-                message: error.message
-            })
-        }
+class UserController {
+    constructor() {
+        this.userService = new UserService();
+        this.token = this.token.bind(this);
+        this.create = this.create.bind(this);
+        this.findById = this.findById.bind(this);
+        this.update = this.update.bind(this);
+        this.delete = this.delete.bind(this);
     }
 
-    async findAll(req, res) {
-        try {
-            const users = await this.userService.findAll();
-            return res.status(200).json({
-                users
-            });
-        } catch (error) {
-            return res.status(404).json({
-                message: error.message
-            });
-        }
+    async token(req, res, next) {
+        try { return res.status(200).json(await this.userService.login(req.body)); }
+        catch (error) { return next(error); }
     }
-    // UPDATE
-    async update(req,res) {
-        try {
-            const id = req.params.id;
-            const updated = await this.userService.update(id, req.body);
-            if (updated === 0) {
-                throw new Error("Failed to update user.");
-            }
-            return res.status(204).send();
-        } catch (error) {
-            return res.status(404).json({
-                message: error.message
-            })
-        }
+
+    async create(req, res, next) {
+        try { return res.status(201).json(await this.userService.create(req.body)); }
+        catch (error) { return next(error); }
     }
-    // DELETE
-    async delete(req,res){
+
+    async findById(req, res, next) {
         try {
-            const id = req.params.id;
-            const deleted = await this.userService.delete(id);
-            if (deleted === 0) {
-                throw new Error("User not founded.");
-            }
-            return res.status(204).send();
-        } catch (error) {
-            return res.status(404).json({
-                message: error.message
-            });
-        }
+            const user = await this.userService.findById(req.params.id);
+            if (!user) throw createError('Usuário não encontrado.', 404);
+            return res.status(200).json(user);
+        } catch (error) { return next(error); }
+    }
+
+    async update(req, res, next) {
+        try {
+            await this.userService.update(req.params.id, req.body);
+            return res.status(204).end();
+        } catch (error) { return next(error); }
+    }
+
+    async delete(req, res, next) {
+        try {
+            await this.userService.delete(req.params.id);
+            return res.status(204).end();
+        } catch (error) { return next(error); }
     }
 }
 

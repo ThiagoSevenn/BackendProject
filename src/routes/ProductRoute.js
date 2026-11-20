@@ -1,29 +1,17 @@
 const express = require('express')
 
-const router = express.Router();
+const auth = require('../middleware/authMiddleware');
 
 const ProductController = require('../controllers/ProductController')
 const productController = new ProductController();
 
-// CREATE
-router.post('/', (req,res) => {
-    return productController.create(req,res);
-});
-// READ
-router.get('/search', (req, res) => {
-    return productController.search(req, res);
-});
+const router = express.Router();
 
-router.get('/:id',(req,res) => {
-    return productController.findById(req,res);
-});
-// UPDATE
-router.put('/:id', (req,res) => {
-    return productController.update(req,res);
-});
-// DELETE
-router.delete('/:id', (req,res) => {
-    return productController.delete(req,res);
-})
+router.get('/search', productController.search);
+router.get('/:id', productController.findById);
+router.post('/', auth, productController.create);
+router.put('/:id', auth, productController.update);
+router.delete('/:id', auth, productController.delete);
+
 
 module.exports = router;

@@ -1,56 +1,40 @@
-const ProductCategory = require('../models/ProductCategoryModel')
+const { Product, Category, ProductCategory } = require('../models');
+const createError = require('../utils/errors');
 
-class ProductCategoryService{
-    
-    // CREATE
-    async create(data){
-        const { enable, name, slug, use_in_menu, stock, 
-                description, price, price_with_discount} = data;
-        if (!name || !slug || !price || !price_with_discount) {
-            throw new Error('All fields are required.');
+class ProductCategoryService {
+    async create(data) {
+        const { product_id, category_id } = data;
+        if (!product_id || !category_id) {
+            throw createError('product_id e category_id são obrigatórios.');
         }
 
-        const productExist = await ProductCategory.findOne({
-            where:{
-                name: name,
-                slug: slug
-            }
-        });
-        if (productExist) {
-            throw new Error('This product is already registered.');
-        }
+        const product = await Product.findByPk(product_id);
+        const category = await Category.findByPk(category_id);
+        if (!product) throw createError('Produto não encontrado.', 404);
+        if (!category) throw createError('Categoria não encontrada.', 404);
 
-        const newProductCategory = { 
-            enable, 
-            name, 
-            slug, 
-            use_in_menu, 
-            stock, 
-            description, 
-            price, 
-            price_with_discount
-        };
+        const relationExists = await ProductCategory.findOne({ where: { product_id, category_id } });
+        if (relationExists) throw createError('Esta categoria já está associada ao produto.');
 
-        return await ProductCategory.create(newProductCategory);
-    }
-    // READ
-    async findById(id){
-        return await ProductCategory.findByPk(id);
+        return ProductCategory.create({ product_id, category_id });
     }
 
-    async search() {
-        return await ProductCategory.findAll();
+    async findByIds(product_id, category_id) {
+        return ProductCategory.findOne({ where: { product_id, category_id } });
     }
-    // UPDATE
-    async update(id, data){
-        const update = await ProductCategory.update(data,{
-            where: {id}
-        })
-        return update[0];
+
+    async search(query = {}) {
+        const where = {};
+        if (query.product_id) where.product_id = query.product_id;
+        if (query.category_id) where.category_id = query.category_id;
+        return ProductCategory.findAll({ where, order: [['product_id', 'ASC'], ['category_id', 'ASC']] });
     }
-    // DELETE
-    async delete(id){
-        return await ProductCategory.destroy({where: {id}})
+
+    async delete(product_id, category_id) {
+        const relation = await this.findByIds(product_id, category_id);
+        if (!relation) throw createError('Relacionamento entre produto e categoria não encontrado.', 404);
+        await relation.destroy();
+        return true;
     }
 }
 

@@ -1,29 +1,17 @@
 const express = require('express')
 
-const router = express.Router();
+const auth = require('../middleware/authMiddleware');
 
 const CategoryController = require('../controllers/CategoryController')
 const categoryController = new CategoryController();
 
-// CREATE
-router.post('/', (req,res) => {
-    return categoryController.create(req,res);
-});
-// READ
-router.get('/search', (req, res) => {
-    return categoryController.search(req, res);
-});
+const router = express.Router();
 
-router.get('/:id',(req,res) => {
-    return categoryController.findById(req,res);
-});
-// UPDATE
-router.put('/:id', (req,res) => {
-    return categoryController.update(req,res);
-});
-// DELETE
-router.delete('/:id', (req,res) => {
-    return categoryController.delete(req,res);
-})
+router.get('/search', categoryController.search);
+router.get('/:id', categoryController.findById);
+router.post('/', auth, categoryController.create);
+router.put('/:id', auth, categoryController.update);
+router.delete('/:id', auth, categoryController.delete);
+
 
 module.exports = router;
